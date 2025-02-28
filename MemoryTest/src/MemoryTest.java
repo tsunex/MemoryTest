@@ -5,6 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/*
+ * メモリテスト用プログラム
+ */
 public class MemoryTest {
 
     public static void main(String[] args) {
