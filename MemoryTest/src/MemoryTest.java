@@ -1,26 +1,24 @@
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 
 public class MemoryTest {
 
     public static void main(String[] args) {
-        int iterations = 20;  // è©¦è¡Œå›æ•°ã‚’è¨­å®š
+        int iterations = 20;  // s‰ñ”‚ğİ’è
         MemoryTest test = new MemoryTest();
 
-        // ãƒ¡ãƒ¢ãƒªä½¿ç”¨é‡ã®ãƒˆãƒ©ãƒƒã‚­ãƒ³ã‚°é–‹å§‹
+        // ƒƒ‚ƒŠg—p—Ê‚Ìƒgƒ‰ƒbƒLƒ“ƒOŠJn
         Runtime runtime = Runtime.getRuntime();
 
-        // OutputStreamã®ãƒ¡ãƒ¢ãƒªä½¿ç”¨é‡ã‚’è¨ˆæ¸¬
-        System.out.println("OutputStream");
+        // FileOutputStream‚Ìƒƒ‚ƒŠg—p—Ê‚ğŒv‘ª
+        System.out.println("FileOutputStream");
         for (int i = 0; i < iterations; i++) {
             try {
-                OutputStream outputStream = new MockOutputStream();
+                OutputStream outputStream = new FileOutputStream("output" + i + ".pdf");
                 test.readPdfAndWriteToStream("file.pdf", outputStream);
                 outputStream.close();
             } catch (IOException e) {
@@ -28,48 +26,47 @@ public class MemoryTest {
             }
         }
 
-        // ãƒ¡ãƒ¢ãƒªä½¿ç”¨é‡ã‚’å–å¾—ã—ã¦è¡¨ç¤º
-        long memoryUsedOutputStream = runtime.totalMemory() - runtime.freeMemory();
-        System.out.println("OutputStream - Total Memory used: " + memoryUsedOutputStream / (1024 * 1024) + " MB");
+        // ƒƒ‚ƒŠg—p—Ê‚ğæ“¾‚µ‚Ä•\¦
+        long memoryUsedFileOutputStream = runtime.totalMemory() - runtime.freeMemory();
+        System.out.println("FileOutputStream - Total Memory used: " + memoryUsedFileOutputStream / (1024 * 1024) + " MB");
 
-        // ByteArrayOutputStreamã®ãƒ¡ãƒ¢ãƒªä½¿ç”¨é‡ã‚’è¨ˆæ¸¬
+        // ByteArrayOutputStream‚Ìƒƒ‚ƒŠg—p—Ê‚ğŒv‘ª
         System.out.println("ByteArrayOutputStream");
         for (int i = 0; i < iterations; i++) {
             try {
                 ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
                 test.readPdfAndWriteToStream("file.pdf", byteArrayStream);
+                //close‘O‚ÉByteArrayOutputStream‚ğƒtƒ@ƒCƒ‹o—Í
+                try (FileOutputStream fos = new FileOutputStream("output_bytearray" + i + ".pdf")) {
+                    byteArrayStream.writeTo(fos);
+                }
                 byteArrayStream.close();
             } catch (IOException e) {
                 System.out.println("Error at iteration " + i + ": " + e.getMessage());
             }
         }
 
-        // ãƒ¡ãƒ¢ãƒªä½¿ç”¨é‡ã‚’å–å¾—ã—ã¦è¡¨ç¤º
+        // ƒƒ‚ƒŠg—p—Ê‚ğæ“¾‚µ‚Ä•\¦
         long memoryUsedByteArray = runtime.totalMemory() - runtime.freeMemory();
         System.out.println("ByteArrayOutputStream - Total Memory used: " + memoryUsedByteArray / (1024 * 1024) + " MB");
 
     }
 
+    /*
+     * ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚İ‚µ‚ÄƒXƒgƒŠ[ƒ€‚Ö‘‚«‚Ş
+     * @String pdfFilePath ƒtƒ@ƒCƒ‹–¼
+     * @OutputStream out ƒXƒgƒŠ[ƒ€
+    */
     public void readPdfAndWriteToStream(String pdfFilePath, OutputStream out) {
-        try (PDDocument document = Loader.loadPDF(new File(pdfFilePath))) {
-            PDFTextStripper pdfStripper = new PDFTextStripper();
-            String text = pdfStripper.getText(document);
-            out.write(text.getBytes());
+        try (FileInputStream fis = new FileInputStream(new File(pdfFilePath))) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // Mock OutputStream
-    static class MockOutputStream extends OutputStream {
-        @Override
-        public void write(int b) throws IOException {
-            // å®Ÿéš›ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®ä»£ã‚ã‚Šã«ãƒ€ãƒŸãƒ¼ã®å®Ÿè£…
-        }
-
-        @Override
-        public void close() throws IOException {
-            // ãƒªã‚½ãƒ¼ã‚¹è§£æ”¾ã®ãŸã‚ã®ãƒ€ãƒŸãƒ¼ã®å®Ÿè£…
-        }
-    }
 }
